@@ -1,0 +1,67 @@
+spring:
+  shardingsphere:
+    # 配置真实数据源
+    datasource:
+      names: db0, db1
+      # 配置第 1 个数据源
+      db0:
+        #type: com.alibaba.druid.pool.DruidDataSource
+        type: com.zaxxer.hikari.HikariDataSource
+        driverClassName: com.mysql.cj.jdbc.Driver
+        jdbcUrl: jdbc:mysql://localhost:3306/db0
+        #url: jdbc:mysql://localhost:3306/db0?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC
+        username: root
+        password: rootroot
+      # 配置第 2 个数据源
+      db1:
+        #type: com.alibaba.druid.pool.DruidDataSource
+        type: com.zaxxer.hikari.HikariDataSource
+        driverClassName: com.mysql.cj.jdbc.Driver
+        jdbcUrl: jdbc:mysql://localhost:3306/db1
+        #url: jdbc:mysql://localhost:3306/db1?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC
+        username: root
+        password: rootroot
+
+    props:
+      sql-show: true
+
+    rules:
+      #enabled: true
+
+      # 配置分片规则
+      sharding:
+#        keyGenerators:
+#          snowflke:
+#            type: SNOWFLAKE
+#            props:
+#              worker-id: 123
+
+        tables:
+          # 配置 t_order 表规则
+          t_user:
+#            keyGenerateStrategy:
+#              keyGeneratorName: snowflake
+#              column: id
+            actual-data-nodes: db$->{0..1}.t_user_$->{0..1}
+            # 配置分库策略
+            database-strategy:
+              standard:
+                sharding-column: id
+                sharding-algorithm-name: database-inline
+
+            # 配置分表策略
+            table-strategy:
+              standard:
+                sharding-column: org_code
+                sharding-algorithm-name: table-inline
+
+        sharding-algorithms:
+          database-inline:
+            type: INLINE
+            props:
+              algorithm-expression: db$->{id % 2}
+
+          table-inline:
+            type: INLINE
+            props:
+              algorithm-expression: t_user_$->{org_code % 2}
